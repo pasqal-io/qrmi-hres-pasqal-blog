@@ -1,0 +1,11 @@
+# GPU on the compute nodes for CUDA-Q emulation (NVIDIA Container Toolkit), on top of compose.cudaq.yml:
+#   ... -f $EXAMPLE_DIR/cluster/compose.cudaq.yml -f $EXAMPLE_DIR/cluster/compose.gpu.yml up -d
+x-gpu: &gpu
+  runtime: nvidia
+  environment:
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
+services:
+  c1: *gpu
+  c2: *gpu

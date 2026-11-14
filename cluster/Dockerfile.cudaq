@@ -1,0 +1,8 @@
+# Adds CUDA-Q to the Pasqal image's /opt/qrmi/venv.
+#   docker build -f cluster/Dockerfile.cudaq -t localhost/slurm-pasqal-cudaq:hres cluster/
+# Under HRES, CUDA-Q needs 0.17 or newer.
+ARG BASE=localhost/slurm-pasqal:0.27.0-hres
+FROM ${BASE}
+ARG CUDAQ=cuda-quantum-cu12==0.17.0
+RUN /opt/qrmi/venv/bin/pip install --no-cache-dir "${CUDAQ}" \
+ && /opt/qrmi/venv/bin/pip check

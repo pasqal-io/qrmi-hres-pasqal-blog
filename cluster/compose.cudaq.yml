@@ -1,0 +1,9 @@
+# The CUDA-Q image (cluster/Dockerfile.cudaq) on the login and compute nodes:
+#   ... -f $EXAMPLE_DIR/cluster/compose.example.yml -f $EXAMPLE_DIR/cluster/compose.cudaq.yml up -d
+x-cudaq: &cudaq
+  image: localhost/slurm-pasqal-cudaq:hres
+
+services:
+  c1: *cudaq
+  c2: *cudaq
+  slurm-login: *cudaq

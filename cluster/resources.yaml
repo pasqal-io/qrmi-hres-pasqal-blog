@@ -1,0 +1,61 @@
+# Slurm HRES resources for three Pasqal QPU targets, one license each.
+# Copy to /etc/slurm/resources.yaml on the controller and run "scontrol reconfigure".
+# Users request a target with --resources=<resource>:1.
+#
+# user_credentials=off: neither Pasqal type needs per-user keys on the controller.
+#   pasqal-cloud acquire/release are no-ops; the job reads the user's ~/.pasqal/config.
+#   pasqal-local identifies the job's user to Warden with MUNGE.
+---
+- resource: EMU_FREE            # Pasqal Cloud target; QRMI resource of the same name
+  mode: MODE_1
+  plugin:
+    type: hres/lua
+    config:
+      - name: path
+        value: /etc/slurm/qrmi_hres.lua
+      - name: qrmi_config
+        value: /etc/slurm/qrmi_config.json
+      - name: user_credentials
+        value: "off"
+    maintenance_cycle: 10       # QPU status check and deferred releases
+  layers:
+    - layer_name: all
+      nodes:
+        - "c[1-2]"
+      count: 1                  # jobs that may hold this target at once
+
+- resource: FRESNEL_CAN1        # Pasqal Cloud QPU; the user's Pasqal Cloud project needs QPU access
+  mode: MODE_1
+  plugin:
+    type: hres/lua
+    config:
+      - name: path
+        value: /etc/slurm/qrmi_hres.lua
+      - name: qrmi_config
+        value: /etc/slurm/qrmi_config.json
+      - name: user_credentials
+        value: "off"
+    maintenance_cycle: 10
+  layers:
+    - layer_name: all
+      nodes:
+        - "c[1-2]"
+      count: 1
+
+- resource: PASQAL_LOCAL        # on-premises QPU behind Warden
+  mode: MODE_1
+  plugin:
+    type: hres/lua
+    config:
+      - name: path
+        value: /etc/slurm/qrmi_hres.lua
+      - name: qrmi_config
+        value: /etc/slurm/qrmi_config.json
+      - name: user_credentials
+        value: "off"
+    maintenance_cycle: 10
+  layers:
+    - layer_name: all
+      nodes:
+        - "c[1-2]"
+      count: 1                  # one job at a time

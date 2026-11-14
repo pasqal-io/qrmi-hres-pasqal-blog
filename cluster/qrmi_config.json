@@ -1,0 +1,21 @@
+{
+  "resources": [
+    {
+      "name": "EMU_FREE",
+      "type": "pasqal-cloud",
+      "environment": {}
+    },
+    {
+      "name": "FRESNEL_CAN1",
+      "type": "pasqal-cloud",
+      "environment": {}
+    },
+    {
+      "name": "PASQAL_LOCAL",
+      "type": "pasqal-local",
+      "environment": {
+        "QRMI_WARDEN_URL": "http://warden:4207"
+      }
+    }
+  ]
+}

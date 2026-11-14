@@ -1,0 +1,73 @@
+# Override for slurm-hres-plugins/containers: runs the cluster as compose project "hres"
+# with hres-* container names, the job Python environment (Dockerfile) on the login and
+# compute nodes, a /home shared by them, this example at /opt/example, the Pasqal Cloud
+# config of the job user, and Warden with a simulated QPU (warden/) for PASQAL_LOCAL.
+# Paths are absolute because compose resolves relative paths against the first compose file.
+#   cd <slurm-hres-plugins>/containers
+#   EXAMPLE_DIR=<this repo> PASQAL_CONFIG=$HOME/.pasqal/config \
+#     docker compose -p hres -f compose.yml -f $EXAMPLE_DIR/cluster/compose.example.yml up -d
+x-node: &node
+  image: localhost/slurm-pasqal:0.27.0-hres
+  pull_policy: never
+  volumes:
+    - home:/home
+    - ${EXAMPLE_DIR:?}:/opt/example:ro
+    - ${PASQAL_CONFIG:?}:/home/user/.pasqal/config:ro
+
+services:
+  mysql:
+    container_name: hres-mysql
+  slurmdbd:
+    container_name: hres-slurmdbd
+  slurmctld:
+    container_name: hres-slurmctld
+  slurmrestd:
+    container_name: hres-slurmrestd
+    ports: !reset []
+  c1:
+    <<: *node
+    container_name: hres-c1
+    build:
+      context: ${EXAMPLE_DIR:?}/cluster
+      args:
+        SLURM_IMAGE: slurm-docker-cluster:${IMAGE_TAG}
+  # c2 and the login node start after c1, which copies /home into the new volume first
+  c2:
+    <<: *node
+    container_name: hres-c2
+    depends_on:
+      - c1
+  slurm-login:
+    <<: *node
+    container_name: hres-login
+    ports: !reset []
+    depends_on:
+      - c1
+  warden:
+    image: localhost/hres-warden:hres
+    pull_policy: never
+    build: ${EXAMPLE_DIR:?}/cluster/warden
+    hostname: warden
+    container_name: hres-warden
+    init: true
+    stop_grace_period: 30s
+    volumes:
+      # Pasqal Local authenticates users to Warden with the cluster's MUNGE key;
+      # slurmdbd creates the volume first, so the key comes from the Slurm image
+      - etc_munge:/etc/munge
+      - warden-state:/var/lib/warden
+    depends_on:
+      - slurmdbd
+    networks:
+      - slurm-network
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4207/accessible"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  # On first mount, /home from the image (user's initial files and ownership) is copied into it
+  home:
+  warden-state:
